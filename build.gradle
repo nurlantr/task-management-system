@@ -34,6 +34,15 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-data-rest:1.7.0'
     implementation 'org.springdoc:springdoc-openapi-security:1.7.0'
 
+    // JJWT API for creating and verifying JWTs
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+
+    // JJWT implementation for signing and parsing tokens
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+
+    // JJWT Jackson support for JSON processing (optional but recommended)
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
