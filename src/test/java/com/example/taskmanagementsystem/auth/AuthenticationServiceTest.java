@@ -53,7 +53,7 @@ public class AuthenticationServiceTest {
                 .lastname(request.getLastname())
                 .email(request.getEmail())
                 .password("encodedPassword")
-                .role(Role.USER)
+                .role(Role.ROLE_USER)
                 .build();
 
         when(passwordEncoder.encode(request.getPassword())).thenReturn("encodedPassword");
@@ -75,7 +75,7 @@ public class AuthenticationServiceTest {
                 .lastname("Arman")
                 .email("aigul@gmail.com")
                 .password("encodedPassword")
-                .role(Role.USER)
+                .role(Role.ROLE_USER)
                 .build();
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(java.util.Optional.of(user));
