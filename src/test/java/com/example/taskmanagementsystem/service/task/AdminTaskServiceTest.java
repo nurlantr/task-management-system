@@ -1,4 +1,4 @@
-package com.example.taskmanagementsystem.service;
+package com.example.taskmanagementsystem.service.task;
 
 import com.example.taskmanagementsystem.dto.task.TaskRequestDto;
 import com.example.taskmanagementsystem.dto.task.TaskResponseDto;
@@ -7,7 +7,6 @@ import com.example.taskmanagementsystem.entity.User;
 import com.example.taskmanagementsystem.mapper.TaskMapper;
 import com.example.taskmanagementsystem.repository.TaskRepository;
 import com.example.taskmanagementsystem.repository.UserRepository;
-import com.example.taskmanagementsystem.service.task.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class TaskServiceTest {
+class AdminTaskServiceTest {
 
     @Mock
     private TaskRepository taskRepository;
@@ -35,7 +34,7 @@ class TaskServiceTest {
     private TaskMapper taskMapper;
 
     @InjectMocks
-    private TaskService taskService;
+    private AdminTaskService taskService;
 
     @BeforeEach
     void setUp() {

@@ -2,7 +2,7 @@ package com.example.taskmanagementsystem.controller;
 
 import com.example.taskmanagementsystem.dto.task.TaskRequestDto;
 import com.example.taskmanagementsystem.dto.task.TaskResponseDto;
-import com.example.taskmanagementsystem.service.task.TaskService;
+import com.example.taskmanagementsystem.service.task.AdminTaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +21,8 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin/tasks")
-public class TaskController {
-    private final TaskService taskService;
+public class AdminTaskController {
+    private final AdminTaskService taskService;
 
     @PostMapping("/create")
     public ResponseEntity<TaskResponseDto> createTask(@RequestBody TaskRequestDto taskRequest) {
