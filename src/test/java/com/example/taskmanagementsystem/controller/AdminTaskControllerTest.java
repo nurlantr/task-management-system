@@ -2,7 +2,7 @@ package com.example.taskmanagementsystem.controller;
 
 import com.example.taskmanagementsystem.dto.task.TaskRequestDto;
 import com.example.taskmanagementsystem.dto.task.TaskResponseDto;
-import com.example.taskmanagementsystem.service.task.TaskService;
+import com.example.taskmanagementsystem.service.task.AdminTaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -15,13 +15,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-class TaskControllerTest {
+class AdminTaskControllerTest {
 
     @Mock
-    private TaskService taskService;
+    private AdminTaskService taskService;
 
     @InjectMocks
-    private TaskController taskController;
+    private AdminTaskController taskController;
 
     @BeforeEach
     void setUp() {
