@@ -3,6 +3,7 @@ package com.example.taskmanagementsystem.service.comment;
 import com.example.taskmanagementsystem.dto.comment.CommentRequestDto;
 import com.example.taskmanagementsystem.dto.comment.CommentResponseDto;
 import com.example.taskmanagementsystem.entity.Comment;
+import com.example.taskmanagementsystem.entity.Role;
 import com.example.taskmanagementsystem.entity.Task;
 import com.example.taskmanagementsystem.entity.User;
 import com.example.taskmanagementsystem.mapper.CommentMapper;
@@ -14,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
@@ -39,6 +42,27 @@ public class CommentService {
                 .build();
         Comment savedComment = commentRepository.save(comment);
         return commentMapper.toCommentResponseDto(savedComment);
+    }
+
+    public List<CommentResponseDto> getCommentsForTask(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        User currentUser = getCurrentUser();
+
+        if (currentUser.getRole() == Role.ROLE_ADMIN) {
+            return commentRepository.findAllByTaskId(id).stream()
+                    .map(commentMapper::toCommentResponseDto)
+                    .toList();
+        }
+
+        if (currentUser.getRole() == Role.ROLE_USER && task.getExecutor() != null
+                && task.getExecutor().getId() == getCurrentUser().getId()
+        ) {
+            return commentRepository.findAllByTaskId(id).stream()
+                    .map(commentMapper::toCommentResponseDto)
+                    .toList();
+        }
+        throw new AccessDeniedException("You do not have permission to view comments on this task");
     }
 
     private User getCurrentUser() {

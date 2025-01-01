@@ -12,5 +12,4 @@ public class CommentResponseDto {
     private Long userId;
     private Long taskId;
     private String content;
-    private String createdAt;
 }
