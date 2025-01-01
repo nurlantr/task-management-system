@@ -1,7 +1,9 @@
 package com.example.taskmanagementsystem.controller;
 
+import com.example.taskmanagementsystem.dto.comment.CommentResponseDto;
 import com.example.taskmanagementsystem.dto.task.TaskRequestDto;
 import com.example.taskmanagementsystem.dto.task.TaskResponseDto;
+import com.example.taskmanagementsystem.service.comment.CommentService;
 import com.example.taskmanagementsystem.service.task.AdminTaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,9 @@ class AdminTaskControllerTest {
 
     @Mock
     private AdminTaskService taskService;
+
+    @Mock
+    private CommentService commentService;
 
     @InjectMocks
     private AdminTaskController taskController;
@@ -122,4 +127,52 @@ class AdminTaskControllerTest {
         assertEquals("Task successfully deleted!", result.getBody());
         verify(taskService, times(1)).deleteTask(id);
     }
+
+    @Test
+    void getTasksWithFilters_shouldReturnFilteredTasks() {
+        List<TaskResponseDto> tasks = List.of(
+                TaskResponseDto.builder()
+                        .id(1L)
+                        .title("Task Title 1")
+                        .description("Description 1")
+                        .status("Pending")
+                        .priority("High")
+                        .authorName("Author 1")
+                        .executorName("Executor 1")
+                        .build(),
+                TaskResponseDto.builder()
+                        .id(2L)
+                        .title("Task Title 2")
+                        .description("Description 2")
+                        .status("Completed")
+                        .priority("Low")
+                        .authorName("Author 2")
+                        .executorName("Executor 2")
+                        .build()
+        );
+
+        when(taskService.getFilteredTasks(null, null, null, null, 0, 10)).thenReturn(tasks);
+
+        ResponseEntity<List<TaskResponseDto>> result = taskController.getTasksWithFilters(null, null, null, null, 0, 10);
+
+        assertEquals(tasks, result.getBody());
+        verify(taskService, times(1)).getFilteredTasks(null, null, null, null, 0, 10);
+    }
+
+    @Test
+    void getCommentsForTask_shouldReturnComments() {
+        Long taskId = 1L;
+        List<CommentResponseDto> comments = List.of(
+                new CommentResponseDto(1L, 1L, taskId, "Comment 1"),
+                new CommentResponseDto(2L, 2L, taskId, "Comment 2")
+        );
+
+        when(commentService.getCommentsForTask(taskId)).thenReturn(comments);
+
+        ResponseEntity<List<CommentResponseDto>> result = taskController.getCommentsForTask(taskId);
+
+        assertEquals(comments, result.getBody());
+        verify(commentService, times(1)).getCommentsForTask(taskId);
+    }
+
 }

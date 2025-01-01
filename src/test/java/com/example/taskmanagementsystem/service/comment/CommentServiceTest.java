@@ -3,6 +3,7 @@ package com.example.taskmanagementsystem.service.comment;
 import com.example.taskmanagementsystem.dto.comment.CommentRequestDto;
 import com.example.taskmanagementsystem.dto.comment.CommentResponseDto;
 import com.example.taskmanagementsystem.entity.Comment;
+import com.example.taskmanagementsystem.entity.Role;
 import com.example.taskmanagementsystem.entity.Task;
 import com.example.taskmanagementsystem.entity.User;
 import com.example.taskmanagementsystem.mapper.CommentMapper;
@@ -20,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,7 +66,7 @@ class CommentServiceTest {
         Task task = mock(Task.class);
         User user = mock(User.class);
         Comment comment = mock(Comment.class);
-        CommentResponseDto responseDto = new CommentResponseDto(1L, 1L, taskId, "Test comment", "2024-12-31");
+        CommentResponseDto responseDto = new CommentResponseDto(1L, 1L, taskId, "Test comment");
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
@@ -104,4 +106,42 @@ class CommentServiceTest {
 
         assertThrows(AccessDeniedException.class, () -> commentService.addComment(taskId, commentRequest));
     }
+
+    @Test
+    void getCommentsForTask_shouldReturnCommentsForAdmin() {
+        Long taskId = 1L;
+        Task task = new Task();
+        User admin = new User();
+        admin.setRole(Role.ROLE_ADMIN);
+        List<Comment> comments = List.of(new Comment(), new Comment());
+        List<CommentResponseDto> response = List.of(
+                new CommentResponseDto(1L, 1L, taskId, "Comment 1"),
+                new CommentResponseDto(2L, 2L, taskId, "Comment 2")
+        );
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(admin));
+        when(commentRepository.findAllByTaskId(taskId)).thenReturn(comments);
+        when(commentMapper.toCommentResponseDto(any(Comment.class))).thenReturn(response.get(0), response.get(1));
+
+        List<CommentResponseDto> result = commentService.getCommentsForTask(taskId);
+
+        assertEquals(response, result);
+    }
+
+    @Test
+    void getCommentsForTask_shouldThrowAccessDeniedException() {
+        Long taskId = 1L;
+        Task task = new Task();
+        User user = new User();
+        user.setRole(Role.ROLE_USER);
+        task.setExecutor(new User());
+        task.getExecutor().setId(2L);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
+
+        assertThrows(AccessDeniedException.class, () -> commentService.getCommentsForTask(taskId));
+    }
+
 }

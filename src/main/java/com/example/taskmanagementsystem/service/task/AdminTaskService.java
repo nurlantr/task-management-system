@@ -92,6 +92,5 @@ public class AdminTaskService {
         return tasksPage.stream()
                 .map(taskMapper::toTaskResponseDto)
                 .toList();
-
     }
 }

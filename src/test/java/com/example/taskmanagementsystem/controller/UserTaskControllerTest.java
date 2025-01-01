@@ -63,7 +63,7 @@ class UserTaskControllerTest {
     void addComment_shouldReturnCommentResponseDto() {
         Long taskId = 1L;
         CommentRequestDto commentRequestDto = new CommentRequestDto("Sample content");
-        CommentResponseDto commentResponseDto = new CommentResponseDto(1L, 1L, taskId, "Sample content", "2024-12-31");
+        CommentResponseDto commentResponseDto = new CommentResponseDto(1L, 1L, taskId, "Sample content");
 
         when(commentService.addComment(eq(taskId), any(CommentRequestDto.class))).thenReturn(commentResponseDto);
 
