@@ -9,6 +9,8 @@ import com.example.taskmanagementsystem.repository.TaskRepository;
 import com.example.taskmanagementsystem.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -74,5 +76,21 @@ public class AdminTaskService {
         task.setExecutor(executor);
         Task updatedTask = taskRepository.save(task);
         return taskMapper.toTaskResponseDto(updatedTask);
+    }
+
+    public List<TaskResponseDto> getFilteredTasks(Long authorId, Long executorId, String status,
+                                                  String priority, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<Task> tasksPage;
+        if (authorId != null) {
+            tasksPage = taskRepository.findByAuthorIdWithFilters(authorId, status, priority, pageable);
+        } else if (executorId != null) {
+            tasksPage = taskRepository.findByExecutorIdWithFilters(executorId, status, priority, pageable);
+        } else {
+            throw new IllegalArgumentException("Either authorId or executorId must be provided");
+        }
+        return tasksPage.stream()
+                .map(taskMapper::toTaskResponseDto)
+                .toList();
     }
 }

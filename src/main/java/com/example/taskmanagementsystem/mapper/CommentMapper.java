@@ -9,6 +9,5 @@ import org.mapstruct.Mapping;
 public interface CommentMapper {
     @Mapping(source = "task.id", target = "taskId")
     @Mapping(source = "user.id", target = "userId")
-    @Mapping(source = "createdAt", target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     CommentResponseDto toCommentResponseDto(Comment comment);
 }

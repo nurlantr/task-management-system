@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -150,4 +153,39 @@ class AdminTaskServiceTest {
         assertEquals(response, result);
         verify(taskRepository, times(1)).save(task);
     }
+
+    @Test
+    void getFilteredTasks_shouldReturnFilteredTasks() {
+        Long authorId = 1L;
+        String status = "Pending";
+        String priority = "High";
+        int page = 0, size = 10;
+
+        List<Task> tasks = List.of(new Task(), new Task());
+        Page<Task> taskPage = new PageImpl<>(tasks);
+        List<TaskResponseDto> response = List.of(
+                TaskResponseDto.builder()
+                        .id(1L)
+                        .title("Task Title 1")
+                        .status(status)
+                        .priority(priority)
+                        .build(),
+                TaskResponseDto.builder()
+                        .id(2L)
+                        .title("Task Title 2")
+                        .status("Completed")
+                        .priority("Low")
+                        .build()
+        );
+
+        when(taskRepository.findByAuthorIdWithFilters(authorId, status, priority, PageRequest.of(page, size)))
+                .thenReturn(taskPage);
+        when(taskMapper.toTaskResponseDto(any(Task.class))).thenReturn(response.get(0), response.get(1));
+
+        List<TaskResponseDto> result = taskService.getFilteredTasks(authorId, null, status, priority, page, size);
+
+        assertEquals(response, result);
+        verify(taskRepository, times(1)).findByAuthorIdWithFilters(authorId, status, priority, PageRequest.of(page, size));
+    }
+
 }
