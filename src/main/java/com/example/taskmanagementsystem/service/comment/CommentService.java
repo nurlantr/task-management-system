@@ -6,14 +6,13 @@ import com.example.taskmanagementsystem.entity.Comment;
 import com.example.taskmanagementsystem.entity.Role;
 import com.example.taskmanagementsystem.entity.Task;
 import com.example.taskmanagementsystem.entity.User;
+import com.example.taskmanagementsystem.exception.ResourceNotFoundException;
+import com.example.taskmanagementsystem.exception.TaskAccessDeniedException;
 import com.example.taskmanagementsystem.mapper.CommentMapper;
 import com.example.taskmanagementsystem.repository.CommentRepository;
 import com.example.taskmanagementsystem.repository.TaskRepository;
-import com.example.taskmanagementsystem.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.taskmanagementsystem.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,17 +21,20 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CommentService {
-    private final UserRepository userRepository;
+    private final SecurityUtil securityUtil;
     private final TaskRepository taskRepository;
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
 
     public CommentResponseDto addComment(Long taskId, CommentRequestDto commentRequest) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
-        User currentUser = getCurrentUser();
-        if (task.getExecutor().getId() != currentUser.getId()) {
-            throw new AccessDeniedException("You can only comment on tasks assigned to you");
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        User currentUser = securityUtil.getCurrentUser();
+
+        if (task.getExecutor() == null
+                || task.getExecutor().getId() != currentUser.getId()) {
+            throw new TaskAccessDeniedException("You can only comment on tasks assigned to you");
         }
 
         Comment comment = Comment.builder()
@@ -46,8 +48,9 @@ public class CommentService {
 
     public List<CommentResponseDto> getCommentsForTask(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
-        User currentUser = getCurrentUser();
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
+
+        User currentUser = securityUtil.getCurrentUser();
 
         if (currentUser.getRole() == Role.ROLE_ADMIN) {
             return commentRepository.findAllByTaskId(id).stream()
@@ -56,18 +59,12 @@ public class CommentService {
         }
 
         if (currentUser.getRole() == Role.ROLE_USER && task.getExecutor() != null
-                && task.getExecutor().getId() == getCurrentUser().getId()
+                && task.getExecutor().getId() == securityUtil.getCurrentUser().getId()
         ) {
             return commentRepository.findAllByTaskId(id).stream()
                     .map(commentMapper::toCommentResponseDto)
                     .toList();
         }
-        throw new AccessDeniedException("You do not have permission to view comments on this task");
-    }
-
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        throw new TaskAccessDeniedException("You do not have permission to view comments on this task");
     }
 }

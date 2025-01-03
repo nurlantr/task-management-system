@@ -6,17 +6,18 @@ import com.example.taskmanagementsystem.entity.Comment;
 import com.example.taskmanagementsystem.entity.Role;
 import com.example.taskmanagementsystem.entity.Task;
 import com.example.taskmanagementsystem.entity.User;
+import com.example.taskmanagementsystem.exception.ResourceNotFoundException;
+import com.example.taskmanagementsystem.exception.TaskAccessDeniedException;
 import com.example.taskmanagementsystem.mapper.CommentMapper;
 import com.example.taskmanagementsystem.repository.CommentRepository;
 import com.example.taskmanagementsystem.repository.TaskRepository;
 import com.example.taskmanagementsystem.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.taskmanagementsystem.util.SecurityUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,6 +45,9 @@ class CommentServiceTest {
     @Mock
     private CommentMapper commentMapper;
 
+    @Mock
+    private SecurityUtil securityUtil;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -56,6 +60,11 @@ class CommentServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
+
+        User testUser = new User();
+        testUser.setId(1L);
+        testUser.setEmail("test@example.com");
+        when(securityUtil.getCurrentUser()).thenReturn(testUser);
     }
 
     @Test
@@ -71,6 +80,7 @@ class CommentServiceTest {
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
         when(task.getExecutor()).thenReturn(user);
+        when(user.getId()).thenReturn(1L);
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
         when(commentMapper.toCommentResponseDto(comment)).thenReturn(responseDto);
 
@@ -86,7 +96,7 @@ class CommentServiceTest {
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> commentService.addComment(taskId, commentRequest));
+        assertThrows(ResourceNotFoundException.class, () -> commentService.addComment(taskId, commentRequest));
     }
 
     @Test
@@ -104,7 +114,7 @@ class CommentServiceTest {
         when(executor.getId()).thenReturn(2L);
         when(user.getId()).thenReturn(1L);
 
-        assertThrows(AccessDeniedException.class, () -> commentService.addComment(taskId, commentRequest));
+        assertThrows(TaskAccessDeniedException.class, () -> commentService.addComment(taskId, commentRequest));
     }
 
     @Test
@@ -119,6 +129,7 @@ class CommentServiceTest {
                 new CommentResponseDto(2L, 2L, taskId, "Comment 2")
         );
 
+        when(securityUtil.getCurrentUser()).thenReturn(admin);
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(admin));
         when(commentRepository.findAllByTaskId(taskId)).thenReturn(comments);
@@ -141,7 +152,7 @@ class CommentServiceTest {
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
 
-        assertThrows(AccessDeniedException.class, () -> commentService.getCommentsForTask(taskId));
+        assertThrows(TaskAccessDeniedException.class, () -> commentService.getCommentsForTask(taskId));
     }
 
 }

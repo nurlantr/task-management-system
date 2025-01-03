@@ -121,6 +121,8 @@ class AdminTaskServiceTest {
     void deleteTask_shouldInvokeRepositoryDelete() {
         Long id = 1L;
 
+        when(taskRepository.existsById(id)).thenReturn(true);
+
         taskService.deleteTask(id);
 
         verify(taskRepository, times(1)).deleteById(id);

@@ -19,5 +19,4 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "AND (:priority IS NULL OR t.priority = :priority)")
     Page<Task> findByExecutorIdWithFilters(Long executorId, String status,
                                            String priority, Pageable pageable);
-
 }
