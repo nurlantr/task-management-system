@@ -4,16 +4,16 @@ package com.example.taskmanagementsystem.service.task;
 import com.example.taskmanagementsystem.dto.task.TaskResponseDto;
 import com.example.taskmanagementsystem.entity.Task;
 import com.example.taskmanagementsystem.entity.User;
+import com.example.taskmanagementsystem.exception.ResourceNotFoundException;
+import com.example.taskmanagementsystem.exception.TaskAccessDeniedException;
 import com.example.taskmanagementsystem.mapper.TaskMapper;
 import com.example.taskmanagementsystem.repository.TaskRepository;
-import com.example.taskmanagementsystem.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.taskmanagementsystem.util.SecurityUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 class UserTaskServiceTest {
@@ -31,7 +30,7 @@ class UserTaskServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private SecurityUtil securityUtil;
 
     @Mock
     private TaskMapper taskMapper;
@@ -48,6 +47,10 @@ class UserTaskServiceTest {
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
+
+        User mockUser = new User();
+        mockUser.setId(1L);
+        when(securityUtil.getCurrentUser()).thenReturn(mockUser);
     }
 
     @Test
@@ -55,16 +58,17 @@ class UserTaskServiceTest {
         Long taskId = 1L;
         String status = "COMPLETED";
 
-        Task task = mock(Task.class);
-        User user = mock(User.class);
+        Task task = new Task();
+        User currentUser = new User();
+        currentUser.setId(1L);
+        task.setExecutor(currentUser);
+
         TaskResponseDto responseDto = TaskResponseDto.builder()
                 .id(taskId)
                 .status(status)
                 .build();
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
-        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
-        when(task.getExecutor()).thenReturn(user);
         when(taskRepository.save(task)).thenReturn(task);
         when(taskMapper.toTaskResponseDto(task)).thenReturn(responseDto);
 
@@ -74,30 +78,42 @@ class UserTaskServiceTest {
     }
 
     @Test
-    void updateTaskStatus_shouldThrowEntityNotFoundException_whenTaskNotFound() {
+    void updateTaskStatus_shouldThrowResourceNotFoundException_whenTaskNotFound() {
         Long taskId = 1L;
         String status = "COMPLETED";
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> userTaskService.updateTaskStatus(taskId, status));
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userTaskService.updateTaskStatus(taskId, status)
+        );
+
+        assertEquals("Task not found with ID: " + taskId, exception.getMessage());
     }
 
     @Test
-    void updateTaskStatus_shouldThrowAccessDeniedException_whenUserIsNotExecutor() {
+    void updateTaskStatus_shouldThrowTaskAccessDeniedException_whenUserIsNotExecutor() {
         Long taskId = 1L;
         String status = "COMPLETED";
 
-        Task task = mock(Task.class);
-        User user = mock(User.class);
-        User executor = mock(User.class);
+        Task task = new Task();
+        User currentUser = new User();
+        currentUser.setId(1L);
+
+        User executor = new User();
+        executor.setId(2L);
+
+        task.setExecutor(executor);
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
-        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
-        when(task.getExecutor()).thenReturn(executor);
-        when(executor.getId()).thenReturn(2L);
-        when(user.getId()).thenReturn(1L);
+        when(securityUtil.getCurrentUser()).thenReturn(currentUser);
 
-        assertThrows(AccessDeniedException.class, () -> userTaskService.updateTaskStatus(taskId, status));
+        TaskAccessDeniedException exception = assertThrows(
+                TaskAccessDeniedException.class,
+                () -> userTaskService.updateTaskStatus(taskId, status)
+        );
+
+        assertEquals("You can only update tasks assigned to you.", exception.getMessage());
     }
 }
